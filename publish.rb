@@ -3,6 +3,7 @@ raise '引数でドメイン名 (FQDN) を指定してください' unless domai
 
 require 'openssl'
 require 'pathname'
+require 'yaml'
 
 OpenSSL::Random.seed File.read('/dev/random', 16)
 digest = OpenSSL::Digest::SHA1.new
@@ -11,7 +12,11 @@ issu_cer = OpenSSL::X509::Certificate.new File.read('ca/ca.pem')
 issu = issu_cer.issuer
 issu_rsa = OpenSSL::PKey::RSA.new File.read('ca/ca_private_key.pem')
 
-sub = issu.clone
+conf = YAML.load File.read('config.yml')
+sub = OpenSSL::X509::Name.new
+['C', 'ST', 'DC', 'O'].each do |param|
+  sub.add_entry param, conf[param]
+end
 sub.add_entry 'CN', domain
 
 sub_rsa = OpenSSL::PKey::RSA.generate 2048
